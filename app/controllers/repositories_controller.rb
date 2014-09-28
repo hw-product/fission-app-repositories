@@ -184,17 +184,20 @@ class RepositoriesController < ApplicationController
     github(:user).remove_collaborator(repo, bot_username)
   end
 
-  def disable_bot_access
+  def configure_hooks(repo)
+    hook = github(:user).hooks(repo).detect do |h|
+      h[:config][:fission]
+    end
   end
 
-  def configure_hooks
+  def unconfigure_hooks(repo)
   end
 
-  def unconfigure_hooks
+  def commit_hook_url
+
   end
 
   def load_account_repositories(force=false)
-
   end
 
 end
