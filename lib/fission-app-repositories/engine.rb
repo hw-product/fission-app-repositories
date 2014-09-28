@@ -3,8 +3,21 @@ module FissionApp
     class Engine < ::Rails::Engine
     end
 
-    def self.repositories_routes
-      lambda do |namespace|
+    # @return [Smash]
+    def self.hook_register
+      @hook_register ||= Smash.new
+    end
+
+    # Provide proc for dynamic route injections. Register
+    # optional hook path.
+    #
+    # @param hook_path [String] path for commit hook
+    # @return [Proc] block for injecting routes
+    def self.repositories_routes(hook_path=nil)
+      Proc.new do |namespace, hook_path=nil|
+        if(hook_path)
+          FissionApp::Repositories.hook_register[namespace] = hook_path
+        end
         get "#{namespace}/:account_id/repositories", :as => "#{namespace}_repositories", :to => 'repositories#list', :defaults => {:namespace => namespace}
         post "#{namespace}/:account_id/repositories/:repository_id", :as => "#{namespace}_repository_enable", :to => 'repositories#enable', :defaults => {:namespace => namespace}
         delete "#{namespace}/:account_id/repositories/:repository_id", :as => "#{namespace}_repository_disable", :to => 'repositories#disable', :defaults => {:namespace => namespace}
