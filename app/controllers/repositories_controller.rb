@@ -185,19 +185,74 @@ class RepositoriesController < ApplicationController
   end
 
   def configure_hooks(repo)
+    url = commit_hook_url
     hook = github(:user).hooks(repo).detect do |h|
-      h[:config][:fission]
+      h.config[:fission] == params[:namespace]
+    end
+    if(url)
+      if(hook)
+        unless(h.config[:url] == url)
+          Rails.logger.info "Updating existing hook on repo #{repo} for #{params[:namespace]}"
+          github(:user).edit_hook(
+            repo, h.id, 'web', h.config.to_hash.merge(:url => url),
+            :events => [:push],
+            :active => true
+          )
+        end
+      else
+        Rails.logger.info "Creating new hook on repo #{repo} for #{params[:namespace]}"
+        github(:user).create_hook(
+          repo, 'web', {:url => url, :fission => params[:namespace], :content_type => 'json'},
+          :events => [:push],
+          :active => true
+        )
+      end
+    else
+      if(hook)
+        Rails.logger.warn "No hook in register for #{params[:namespace]}. Removing existing hook on #{repo}!"
+        github(:user).remote_hook(repo, hook.id)
+      end
     end
   end
 
   def unconfigure_hooks(repo)
+    hook = github(:user).hooks.detect do |h|
+      h.config[:fission] == params[:namespace]
+    end
+    if(hook)
+      Rails.logger.info "Removing hook from repo #{repo} for #{params[:namespace]}"
+      github(:user).remote_hook(repo, hook.id)
+    end
   end
 
   def commit_hook_url
-
+    if(FissionApp::Respositories.hook_register(params[:namespace]))
+      File.join(
+        Rails.application.config.settings.get(:fission, :rest_endpoint_ssl),
+        FissionApp::Respositories.hook_register(params[:namespace])
+      )
+    end
   end
 
   def load_account_repositories(force=false)
+    unless(current_user.session.get(:github_repos, @account.name))
+      repos = []
+      count = 0
+      result = nil
+      if(github(:user).user.login == @account.name)
+        until((result = c.repos(:per_page => 50, :page => count += 1)).count < 50)
+          repos += result
+        end
+        repos += result
+      else
+        until((result = c.org_repos(@account.name, :per_page => 50, :page => count += 1)).count < 50)
+          repos += result
+        end
+        repos += result
+      end
+      current_user.session.set(:github_repos, @account.name, repos)
+    end
+    current_user.session.get(:github_repos, @account.name)
   end
 
 end
