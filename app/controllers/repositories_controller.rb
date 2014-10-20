@@ -58,7 +58,7 @@ class RepositoriesController < ApplicationController
         configure_hooks(repo[:full_name])
       end
       format.html do
-        flash[:error] 'Unsupported request!'
+        flash[:error] = 'Unsupported request!'
         redirect_to packager_dashboard_path
       end
     end
@@ -74,14 +74,14 @@ class RepositoriesController < ApplicationController
           disable_bot_access(local_repo.name)
           unconfigure_hooks(local_repo.name)
           @product.remove_repository(local_repo)
-          flash[:success] "Repository has been disabled (#{local_repo.name})"
+          flash[:success] = "Repository has been disabled (#{local_repo.name})"
         else
           flash[:error] = 'Requested repository not enabled!'
         end
         javascript_redirect_to packager_dashboard
       end
       format.html do
-        flash[:error] 'Unsupported request!'
+        flash[:error] = 'Unsupported request!'
         redirect_to packager_dashboard_path
       end
     end
@@ -92,7 +92,7 @@ class RepositoriesController < ApplicationController
       format.js do
       end
       format.html do
-        flash[:error] 'Unsupported request!'
+        flash[:error] = 'Unsupported request!'
         redirect_to packager_dashboard_path
       end
     end
@@ -103,7 +103,7 @@ class RepositoriesController < ApplicationController
       format.js do
       end
       format.html do
-        flash[:error] 'Unsupported request!'
+        flash[:error] = 'Unsupported request!'
         redirect_to packager_dashboard_path
       end
     end
