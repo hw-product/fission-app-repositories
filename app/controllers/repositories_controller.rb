@@ -5,7 +5,7 @@ class RepositoriesController < ApplicationController
     unless(@product)
       raise 'Failed to determine product scoping!'
     end
-    @source = Source.find_or_create_by_name('github')
+    @source = Source.find_or_create(:name => 'github')
     @account = [
       current_user.owned_accounts,
       current_user.managed_accounts
@@ -30,7 +30,7 @@ class RepositoriesController < ApplicationController
         rescue
           @all_repositories = github(:user).repos
         end
-        @enabled_repositories = @product.repositories.where(:account_id => @account.id).all
+        @enabled_repositories = @product.repositories_dataset.where(:account_id => @account.id).all
       end
     end
   end
