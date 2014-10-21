@@ -1,0 +1,7 @@
+%div.repositories-list{:class => params[:namespace]}
+  %div.container.container-padding
+    %div.panel.panel-default
+      %div.panel-heading
+        %h3= "#{params[:namespace].capitalize} Repositories"
+      %div.panel-body.repository-listing
+        = render :partial => 'repositories/summary', :locals => {:enabled => @enabled_repositories, :disabled => @disabled_repositories}

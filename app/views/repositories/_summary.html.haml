@@ -1,0 +1,30 @@
+- if content_for?(:pagination)
+  %div.fission-pagination.well.well-sm= content_for(:pagination)
+%table.table.table-hover.repository-display
+  %thead
+    %tr
+      %th
+        Name
+      %th.col-md-2
+        Status
+      %th.col-md-1
+        &nbsp;
+  %tbody
+    - enabled.each do |repo|
+      %tr
+        %td= repo.first
+        %td
+          Enabled!
+        %td
+          %a.window-rails{:href => '#', 'window-rails-ajax' => :delete, 'window-rails-url' => packager_repository_disable_path(:account_id => @account.id, :repository_id => repo.last, :repository_name => repo.first), 'window-rails-confirm' => "Disable repository (#{repo.first})?", 'window-rails-title' => 'Repository disable'}
+            %span.glyphicon.glyphicon-remove
+    - disabled.each do |repo|
+      %tr
+        %td= repo.first
+        %td
+          Disabled!
+        %td
+          %a.window-rails{:href => '#', 'window-rails-ajax' => :post, 'window-rails-url' => packager_repository_enable_path(:account_id => @account.id, :repository_id => repo.last, :repository_name => repo.first), 'window-rails-confirm' => "Enable repository (#{repo.first})?", 'window-rails-title' => 'Repository enable'}
+            %span.glyphicon.glyphicon-plus
+- if content_for?(:pagination)
+  %div.fission-pagination.well.well-sm= content_for(:pagination)
