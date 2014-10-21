@@ -30,7 +30,16 @@ class RepositoriesController < ApplicationController
         rescue
           @all_repositories = github(:user).repos
         end
-        @enabled_repositories = @product.repositories_dataset.where(:account_id => @account.id).all
+        @all_repositories = @all_repositories.map do |remote_repo|
+          [remote_repo.full_name, remote_repo.id]
+        end.sort_by(&:first)
+        @enabled_repositories = @product.repositories_dataset.where(:account_id => @account.id).all.map do |local_repo|
+          [local_repo.name, local_repo.id]
+        end.sort_by(&:first)
+        @disabled_repositories = @all_repositories.dup
+        @disabled_repositories.delete_if do |r|
+          @enabled_repositories.map(&:first).include?(r.first)
+        end
       end
     end
   end
@@ -38,14 +47,14 @@ class RepositoriesController < ApplicationController
   def enable
     respond_to do |format|
       format.js do
-        repo = github(:user).repo(params[:repository_id]).to_hash
+        repo = github(:user).repo(params[:repository_name]).to_hash
         local_repo = @account.repositories_dataset.where(
-          :remote_id => repo[:id]
+          :remote_id => repo[:id].to_s
         ).first
         unless(local_repo)
           local_repo = Repository.new(
             :account_id => @account.id,
-            :remote_id => repo[:id]
+            :remote_id => repo[:id].to_s
           )
         end
         local_repo.name = repo[:full_name]
@@ -56,6 +65,9 @@ class RepositoriesController < ApplicationController
         @product.add_repository(local_repo)
         enable_bot_access(repo[:full_name])
         configure_hooks(repo[:full_name])
+        javascript_redirect_to packager_repositories_path(
+          :namespace => params[:namespace], :account_id => params[:account_id]
+        )
       end
       format.html do
         flash[:error] = 'Unsupported request!'
@@ -68,7 +80,7 @@ class RepositoriesController < ApplicationController
     respond_to do |format|
       format.js do
         local_repo = @product.repositories_dataset.where(
-          :remote_id => params[:repository_id]
+          :id => params[:repository_id]
         ).first
         if(local_repo)
           disable_bot_access(local_repo.name)
@@ -78,7 +90,9 @@ class RepositoriesController < ApplicationController
         else
           flash[:error] = 'Requested repository not enabled!'
         end
-        javascript_redirect_to packager_dashboard
+        javascript_redirect_to packager_repositories_path(
+          :namespace => params[:namespace], :account_id => params[:account_id]
+        )
       end
       format.html do
         flash[:error] = 'Unsupported request!'
@@ -216,20 +230,22 @@ class RepositoriesController < ApplicationController
   end
 
   def unconfigure_hooks(repo)
-    hook = github(:user).hooks.detect do |h|
-      h.config[:fission] == params[:namespace]
+    hook = github(:user).hooks(repo).detect do |h|
+      h.config[:fission] == params[:namespace].to_s
     end
     if(hook)
       Rails.logger.info "Removing hook from repo #{repo} for #{params[:namespace]}"
-      github(:user).remote_hook(repo, hook.id)
+      github(:user).remove_hook(repo, hook.id)
+    else
+      Rails.logger.warn "Failed to locate repo hook for removal! Repository: #{repo} Namespace: #{params[:namespace]}"
     end
   end
 
   def commit_hook_url
-    if(FissionApp::Respositories.hook_register(params[:namespace]))
+    if(FissionApp::Repositories.hook_register.get(params[:namespace]))
       File.join(
         Rails.application.config.settings.get(:fission, :rest_endpoint_ssl),
-        FissionApp::Respositories.hook_register(params[:namespace])
+        FissionApp::Repositories.hook_register.get(params[:namespace])
       )
     end
   end
