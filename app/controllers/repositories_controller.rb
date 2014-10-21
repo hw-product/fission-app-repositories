@@ -22,7 +22,7 @@ class RepositoriesController < ApplicationController
     respond_to do |format|
       format.js do
         flash[:error] = 'Unsupported request!'
-        javascript_redirect_to packager_dashboard_path
+        javascript_redirect_to repository_listing_endpoint
       end
       format.html do
         begin
@@ -65,13 +65,11 @@ class RepositoriesController < ApplicationController
         @product.add_repository(local_repo)
         enable_bot_access(repo[:full_name])
         configure_hooks(repo[:full_name])
-        javascript_redirect_to packager_repositories_path(
-          :namespace => params[:namespace], :account_id => params[:account_id]
-        )
+        javascript_redirect_to repository_listing_endpoint
       end
       format.html do
         flash[:error] = 'Unsupported request!'
-        redirect_to packager_dashboard_path
+        redirect_to repository_listing_endpoint
       end
     end
   end
@@ -90,13 +88,11 @@ class RepositoriesController < ApplicationController
         else
           flash[:error] = 'Requested repository not enabled!'
         end
-        javascript_redirect_to packager_repositories_path(
-          :namespace => params[:namespace], :account_id => params[:account_id]
-        )
+        javascript_redirect_to repository_listing_endpoint
       end
       format.html do
         flash[:error] = 'Unsupported request!'
-        redirect_to packager_dashboard_path
+        redirect_to repository_listing_endpoint
       end
     end
   end
@@ -107,7 +103,7 @@ class RepositoriesController < ApplicationController
       end
       format.html do
         flash[:error] = 'Unsupported request!'
-        redirect_to packager_dashboard_path
+        redirect_to repository_listing_endpoint
       end
     end
   end
@@ -118,12 +114,20 @@ class RepositoriesController < ApplicationController
       end
       format.html do
         flash[:error] = 'Unsupported request!'
-        redirect_to packager_dashboard_path
+        redirect_to repository_listing_endpoint
       end
     end
   end
 
   protected
+
+  def repository_listing_endpoint
+    send(
+      "#{params[:namespace]}_repositories_path",
+      :namespace => params[:namespace],
+      :account_id => params[:account_id]
+    )
+  end
 
   def bot_team
     team = github(:user).org_teams()
