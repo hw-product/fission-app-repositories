@@ -191,7 +191,10 @@ class RepositoriesController < ApplicationController
   end
 
   def org_add_membership(team)
-    github(:user).add_team_membership(team.id, bot_username)
+    team_add_result = github(:user).add_team_membership(team.id, bot_username)
+    if(team_add_result[:state] != 'active')
+      github(:bot).update_organization_membership(@account.name, :state => 'active')
+    end
   end
 
   def collaborator_enable(repo)
