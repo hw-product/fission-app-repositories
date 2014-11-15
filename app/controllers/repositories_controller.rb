@@ -208,7 +208,7 @@ class RepositoriesController < ApplicationController
   def configure_hooks(repo)
     url = commit_hook_url
     hook = github(:user).hooks(repo).detect do |h|
-      h.config[:fission] == params[:namespace]
+      h.config[:fission] == params[:namespace].to_s
     end
     if(url)
       if(hook)
