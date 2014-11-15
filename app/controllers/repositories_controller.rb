@@ -210,12 +210,13 @@ class RepositoriesController < ApplicationController
     hook = github(:user).hooks(repo).detect do |h|
       h.config[:fission] == params[:namespace].to_s
     end
+
     if(url)
       if(hook)
-        unless(h.config[:url] == url)
+        unless(hook.config[:url] == url)
           Rails.logger.info "Updating existing hook on repo #{repo} for #{params[:namespace]}"
           github(:user).edit_hook(
-            repo, h.id, 'web', h.config.to_hash.merge(:url => url),
+            repo, hook.id, 'web', hook.config.to_hash.merge(:url => url),
             :events => [:push],
             :active => true
           )
