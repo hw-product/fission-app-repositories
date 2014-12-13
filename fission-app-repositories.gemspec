@@ -11,5 +11,5 @@ Gem::Specification.new do |s|
   s.require_path = 'lib'
   s.add_dependency 'fission-app'
   s.add_dependency 'fission-app-jobs'
-  s.files = Dir['**/*']
+  s.files = Dir['{app,lib}/**/**/*'] + %w(fission-app-repositories.gemspec README.md CHANGELOG.md)
 end
