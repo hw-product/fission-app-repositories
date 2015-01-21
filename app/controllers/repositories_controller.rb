@@ -6,13 +6,6 @@ class RepositoriesController < ApplicationController
       raise 'Failed to determine product scoping!'
     end
     @source = Source.find_or_create(:name => 'github')
-    @account = [
-      current_user.owned_accounts,
-      current_user.managed_accounts
-    ].flatten.uniq.detect do |act|
-      act.id.to_i == params[:account_id].to_i &&
-        act.source_id == @source.id
-    end
     unless(@account)
       raise 'Failed to load requested account'
     end
