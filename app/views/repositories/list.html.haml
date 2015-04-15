@@ -11,8 +11,8 @@
         :id => "#{id}-panel",
         :heading => content_for(:panel_header),
         :panel_content => render(:partial => 'repositories/summary',
-                                 :locals => {:enabled => @enabled_repositories,
-                                 :disabled => @disabled_repositories})
+                                 :locals => { :enabled => @enabled_repositories,
+                                              :disabled => @disabled_repositories})
       }
     )
   end
