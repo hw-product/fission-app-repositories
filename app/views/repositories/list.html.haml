@@ -10,9 +10,13 @@
       :locals  => {
         :id => "#{id}-panel",
         :heading => content_for(:panel_header),
-        :panel_content => render(:partial => 'repositories/summary', :locals => {:enabled => @enabled_repositories, :disabled => @disabled_repositories})
+        :panel_content => render(:partial => 'repositories/summary',
+                                 :locals => {:enabled => @enabled_repositories,
+                                 :disabled => @disabled_repositories})
       }
     )
   end
 
-= render(:partial => 'layouts/container', :locals => { :container_class => params[:namespace], :container_id => id })
+= render(:partial => 'layouts/container',                     |
+         :locals => { :container_class => params[:namespace], |
+                      :container_id => id })

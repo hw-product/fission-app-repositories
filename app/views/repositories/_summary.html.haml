@@ -4,24 +4,31 @@
 - header_data    = ['Name', 'Status', '&nbsp;'.html_safe]
 - header_classes = ['', 'col-md-2', 'col-md-1']
 
-- content_for(:table1) do
+- content_for(:table) do
   - arr =  [['Enabled!',  enabled,  'enable']]
   - arr <<  ['Disabled!', disabled, 'disable']
 
-  - arr.each do |title, coll, type, glyph_type|
+  - arr.each do |title, coll, type|
     - coll.each do |repo|
       %tr{ :class => (type == 'enable' ? 'bg-success' : '') }
         %td= repo.first
         %td= title
         %td
-          - http_meth, glyph_type, action = (type == 'enable') ? [:delete, 'remove', 'disable'] : [:post, 'plus', 'enable']
+          - http_meth, action, glyph_type = (type == 'enable') ? [:delete, 'disable', 'remove'] : [:post, 'enable', 'plus']
+
           - url_opts = { :account_id => @account.id, :repository_id => repo.last, :repository_name => repo.first }
           - url = send("#{@product.internal_name}_repository_#{action}_path", url_opts)
           - conf_msg = "#{action.capitalize} repository (#{repo.first})?"
-          %a.window-rails{:href => '#', 'window-rails-ajax' => http_meth, 'window-rails-url' => url, 'window-rails-confirm' => conf_msg, 'window-rails-title' => "Repository #{action}"}
+          %a.window-rails{ :href => '#',                                   |
+                           'window-rails-ajax' => http_meth,               |
+                           'window-rails-url' => url,                      |
+                           'window-rails-confirm' => conf_msg,             |
+                           'window-rails-title' => "Repository #{action}"}
             %span.glyphicon{ :class => "glyphicon-#{glyph_type}" }
 
-= render(:partial => 'layouts/table', :locals => { :header_data => header_data, :header_classes => header_classes, :table_content_name => :table1 })
+= render(:partial => 'layouts/table', :locals => { :header_data => header_data,       |
+                                                   :header_classes => header_classes, |
+                                                   :table_content_name => :table })
 
 - if content_for?(:pagination)
   %div.fission-pagination.well.well-sm= content_for(:pagination)
