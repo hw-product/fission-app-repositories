@@ -1,34 +1,88 @@
 - if content_for?(:pagination)
   %div.fission-pagination.well.well-sm= content_for(:pagination)
 
-- header_data    = ['Name', 'Status', '&nbsp;'.html_safe]
-- header_classes = ['', 'col-md-2', 'col-md-1']
+.well.well-sm
+  %form#repository-adder{:action => '#'}
+    .row
+      .col-md-2
+        %div{:style => 'text-align: center; vertical-align: middle'}
+          %b
+            Enable Repository:
+      .col-md-8
+        .dropdown
+          %input#repository-box.form-control{:type => 'text', :placeholder => 'Repository Name'}
 
-- content_for(:table) do
-  - arr =  [['Enabled!',  enabled,  'enable']]
-  - arr <<  ['Disabled!', disabled, 'disable']
+      .col-md-2
+        %submit#repository-enable.btn.btn-success
+          Enable
 
-  - arr.each do |title, coll, type|
-    - coll.each do |repo|
-      %tr{ :class => (type == 'enable' ? 'bg-success' : '') }
+%table.table.table-striped
+  %thead
+    %tr
+      %th
+        Name
+      %th
+        &nbsp;
+  %tbody
+    - @enabled_repositories.each do |repo|
+      %tr
         %td= repo.first
-        %td= title
         %td
-          - http_meth, action, glyph_type = (type == 'enable') ? [:delete, 'disable', 'remove'] : [:post, 'enable', 'plus']
-
-          - url_opts = { :account_id => @account.id, :repository_id => repo.last, :repository_name => repo.first }
-          - url = send("#{@product.internal_name}_repository_#{action}_path", url_opts)
-          - conf_msg = "#{action.capitalize} repository (#{repo.first})?"
-          %a.window-rails{ :href => '#',                                   |
-                           'window-rails-ajax' => http_meth,               |
-                           'window-rails-url' => url,                      |
-                           'window-rails-confirm' => conf_msg,             |
-                           'window-rails-title' => "Repository #{action}"}
-            %span.glyphicon{ :class => "glyphicon-#{glyph_type}" }
-
-= render(:partial => 'layouts/table', :locals => { :header_data => header_data,       |
-                                                   :header_classes => header_classes, |
-                                                   :table_content_name => :table })
+          :ruby
+            link_opts = Smash.new(
+              'window-rails-ajax' => 'delete',
+              'window-rails-url' => send(
+                "#{@namespace}_repository_disable_path",
+                :repository_id => repo.last,
+                :repository_name => repo.first
+              ),
+              'window-rails-confirm' => "Disable repository #{repo.first}?"
+            )
+          %a.pull-right.btn.btn-danger.btn-xs.window-rails{link_opts}
+            %span.glyphicon.glyphicon-trash
 
 - if content_for?(:pagination)
   %div.fission-pagination.well.well-sm= content_for(:pagination)
+
+:ruby
+  adder_data = Smash[
+    @disabled_repositories.map{ |r|
+      [
+        r.first.split('/').last,
+        Smash.new(
+          'name' => r.first,
+          'url' => send("#{@namespace}_repository_enable_path", :repository_name => r.first, :repository_id => r.last)
+        )
+      ]
+    }
+  ]
+
+:javascript
+  $(document).ready(
+    function(){
+      var repos = $(#{format_type_to_js(@disabled_repositories)});
+      $('#repository-box').autocomplete({
+        minLength: 0,
+        focus: function(event, ui){
+          $('#repository-box').val(ui.item.value);
+          return false;
+        },
+        source: #{format_type_to_js(@disabled_repositories.map{|r| {'value' => r.first.split('/').last}})}
+      });
+      $('#repository-adder').submit(function(){
+        repos = #{format_type_to_js(adder_data)};
+        repo = repos[$('#repository-box').val()];
+        if(repo){
+          window_rails.confirm.open({
+            title: 'Enable Confirmation',
+            content: 'Confirm enable of repository: ' + repo['name'],
+            url: repo['url'],
+            ajax: 'post'
+          });
+        }
+        else {
+          alert('WTF!? -- make proper error here');
+        }
+      });
+    }
+  );

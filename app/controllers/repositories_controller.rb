@@ -1,15 +1,6 @@
 class RepositoriesController < ApplicationController
 
-  before_action do
-    @product = Product.find_by_internal_name(params[:namespace])
-    unless(@product)
-      raise 'Failed to determine product scoping!'
-    end
-    @source = Source.find_or_create(:name => 'github')
-    unless(@account)
-      raise 'Failed to load requested account'
-    end
-  end
+  before_action :set_product
 
   def list
     respond_to do |format|
@@ -26,7 +17,7 @@ class RepositoriesController < ApplicationController
         @all_repositories = @all_repositories.map do |remote_repo|
           [remote_repo.full_name, remote_repo.id]
         end.sort_by(&:first)
-        @enabled_repositories = @product.repositories_dataset.where(:account_id => @account.id).all.map do |local_repo|
+        @enabled_repositories = @base.repositories_dataset.where(:account_id => @account.id).all.map do |local_repo|
           [local_repo.name, local_repo.id]
         end.sort_by(&:first)
         @disabled_repositories = @all_repositories.dup
@@ -55,7 +46,7 @@ class RepositoriesController < ApplicationController
         local_repo.url = repo[:git_url]
         local_repo.clone_url = repo[:clone_url]
         local_repo.save
-        @product.add_repository(local_repo)
+        @base.add_repository(local_repo)
         enable_bot_access(repo[:full_name])
         configure_hooks(repo[:full_name])
         javascript_redirect_to repository_listing_endpoint
@@ -70,13 +61,13 @@ class RepositoriesController < ApplicationController
   def disable
     respond_to do |format|
       format.js do
-        local_repo = @product.repositories_dataset.where(
+        local_repo = @base.repositories_dataset.where(
           :id => params[:repository_id]
         ).first
         if(local_repo)
           disable_bot_access(local_repo.name)
           unconfigure_hooks(local_repo.name)
-          @product.remove_repository(local_repo)
+          @base.remove_repository(local_repo)
           flash[:success] = "Repository has been disabled (#{local_repo.name})"
         else
           flash[:error] = 'Requested repository not enabled!'
@@ -115,11 +106,7 @@ class RepositoriesController < ApplicationController
   protected
 
   def repository_listing_endpoint
-    send(
-      "#{params[:namespace]}_repositories_path",
-      :namespace => params[:namespace],
-      :account_id => params[:account_id]
-    )
+    send("#{@namespace}_repositories_path")
   end
 
   def bot_team
@@ -201,13 +188,13 @@ class RepositoriesController < ApplicationController
   def configure_hooks(repo)
     url = commit_hook_url
     hook = github(:user).hooks(repo).detect do |h|
-      h.config[:fission] == params[:namespace].to_s
+      h.config[:fission] == hook_identifier
     end
 
     if(url)
       if(hook)
         unless(hook.config[:url] == url)
-          Rails.logger.info "Updating existing hook on repo #{repo} for #{params[:namespace]}"
+          Rails.logger.info "Updating existing hook on repo #{repo} for #{@base.name}"
           github(:user).edit_hook(
             repo, hook.id, 'web', hook.config.to_hash.merge(:url => url),
             :events => [:push],
@@ -215,16 +202,16 @@ class RepositoriesController < ApplicationController
           )
         end
       else
-        Rails.logger.info "Creating new hook on repo #{repo} for #{params[:namespace]}"
+        Rails.logger.info "Creating new hook on repo #{repo} for #{@base.name}"
         github(:user).create_hook(
-          repo, 'web', {:url => url, :fission => params[:namespace], :content_type => 'json'},
+          repo, 'web', {:url => url, :fission => hook_identifier, :content_type => 'json'},
           :events => [:push],
           :active => true
         )
       end
     else
       if(hook)
-        Rails.logger.warn "No hook in register for #{params[:namespace]}. Removing existing hook on #{repo}!"
+        Rails.logger.warn "No hook in register for #{@base.name}. Removing existing hook on #{repo}!"
         github(:user).remote_hook(repo, hook.id)
       end
     end
@@ -232,13 +219,13 @@ class RepositoriesController < ApplicationController
 
   def unconfigure_hooks(repo)
     hook = github(:user).hooks(repo).detect do |h|
-      h.config[:fission] == params[:namespace].to_s
+      h.config[:fission] == hook_identifier
     end
     if(hook)
-      Rails.logger.info "Removing hook from repo #{repo} for #{params[:namespace]}"
+      Rails.logger.info "Removing hook from repo #{repo} for #{@base.name}"
       github(:user).remove_hook(repo, hook.id)
     else
-      Rails.logger.warn "Failed to locate repo hook for removal! Repository: #{repo} Namespace: #{params[:namespace]}"
+      Rails.logger.warn "Failed to locate repo hook for removal! Repository: #{repo} Namespace: #{@base.name}"
     end
   end
 
@@ -270,6 +257,27 @@ class RepositoriesController < ApplicationController
       current_user.session.set(:github_repos, @account.name, repos)
     end
     current_user.session.get(:github_repos, @account.name)
+  end
+
+  def hook_identifier
+    if(@hook_identifier.blank?)
+      raise 'No hook identifier has been defined!'
+    end
+    @hook_identifier.to_s
+  end
+
+  def set_product
+    @product = Product.find_by_internal_name(params[:namespace])
+    unless(@product)
+      raise 'Failed to determine product scoping!'
+    end
+    @source = Source.find_or_create(:name => 'github')
+    unless(@account)
+      raise 'Failed to load requested account'
+    end
+    @base = @product
+    @namespace = @product.internal_name
+    @hook_identifier = @namespace
   end
 
 end
