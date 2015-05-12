@@ -13,8 +13,7 @@
           %input#repository-box.form-control{:type => 'text', :placeholder => 'Repository Name'}
 
       .col-md-2
-        %submit#repository-enable.btn.btn-success
-          Enable
+        %input#repository-enable.btn.btn-success{:type => 'submit', :value => 'Enable'}
 
 %table.table.table-striped
   %thead
@@ -70,6 +69,7 @@
         source: #{format_type_to_js(@disabled_repositories.map{|r| {'value' => r.first.split('/').last}})}
       });
       $('#repository-adder').submit(function(){
+        $('#repository-adder input.btn').val('Enabling...').attr('disabled', 'disabled');
         repos = #{format_type_to_js(adder_data)};
         repo = repos[$('#repository-box').val()];
         if(repo){
@@ -81,8 +81,12 @@
           });
         }
         else {
-          alert('WTF!? -- make proper error here');
+          window_rails.alert.open({
+            title: 'Repository enable error',
+            content: 'Failed to locate requested repository!'
+          });
         }
+        $('#repository-adder input.btn').val('Enable').attr('disabled', null);
       });
     }
   );
