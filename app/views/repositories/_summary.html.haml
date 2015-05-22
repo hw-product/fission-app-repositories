@@ -77,7 +77,9 @@
             title: 'Enable Confirmation',
             content: 'Confirm enable of repository: ' + repo['name'],
             url: repo['url'],
-            ajax: 'post'
+            ajax: 'post',
+            progress: 'Enabling repository',
+            complete: 'Enabled repository: ' + repo['name'] + '!'
           });
         }
         else {
@@ -87,6 +89,7 @@
           });
         }
         $('#repository-adder input.btn').val('Enable').attr('disabled', null);
+        return false;
       });
     }
   );
