@@ -1,3 +1,6 @@
+# v0.1.6
+* Properly disable form submit on repo enable
+
 # v0.1.4
 * Refactored views
 * Use auto complete text field for repository name on add
