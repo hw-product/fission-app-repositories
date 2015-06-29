@@ -197,7 +197,7 @@ class RepositoriesController < ApplicationController
           Rails.logger.info "Updating existing hook on repo #{repo} for #{@base.name}"
           github(:user).edit_hook(
             repo, hook.id, 'web', hook.config.to_hash.merge(:url => url),
-            :events => [:push],
+            :events => ['*'],
             :active => true
           )
         end
@@ -205,7 +205,7 @@ class RepositoriesController < ApplicationController
         Rails.logger.info "Creating new hook on repo #{repo} for #{@base.name}"
         github(:user).create_hook(
           repo, 'web', {:url => url, :fission => hook_identifier, :content_type => 'json'},
-          :events => [:push],
+          :events => ['*'],
           :active => true
         )
       end
