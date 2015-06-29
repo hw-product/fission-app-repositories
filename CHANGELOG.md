@@ -1,3 +1,6 @@
+# v0.1.8
+* Update event type registered on webhooks from push to all
+
 # v0.1.6
 * Properly disable form submit on repo enable
 
