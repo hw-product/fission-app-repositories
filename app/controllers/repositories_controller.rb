@@ -263,7 +263,11 @@ class RepositoriesController < ApplicationController
     if(@hook_identifier.blank?)
       raise 'No hook identifier has been defined!'
     end
-    @hook_identifier.to_s
+    if(Rails.env.to_s == 'production')
+      @hook_identifier.to_s
+    else
+      "#{ENV.fetch('USER', 'testing')}-#{@hook_identifier}"
+    end
   end
 
   def set_product
