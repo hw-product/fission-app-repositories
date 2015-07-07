@@ -3,8 +3,20 @@
 - content_for(:panel_header) do
   %h3= "#{@base.name.humanize} Repositories"
 
+- content_for(:repository_enabler) do
+  .well.well-sm
+    %form#repository-adder{:action => '#'}
+      .row
+        .col-md-2
+          %label= "Enable Repository"
+        .col-md-8
+          %dropdown
+            %input.full-width#repository-box.form-control{:type => 'text', :placeholder => 'Repository Name'}
+        .col-md-2{ :style => "padding-right:20px" }
+          %input.full-width#repository-enable.btn.btn-success{:type => 'submit', :value => 'Enable'}
+
 :ruby
-  content_for(:container) do
+  content_for(:repository_summary) do
     render(
       :partial => 'layouts/panel',
       :locals  => {
@@ -16,9 +28,14 @@
             :enabled => @enabled_repositories,
             :disabled => @disabled_repositories
           }
-        )
+        ),
+        :panel_class => 'widget'
       }
     )
   end
+
+- content_for(:container) do
+  = yield(:repository_enabler)
+  = yield(:repository_summary)
 
 = render :partial => 'layouts/container', :locals => {:container_class => params[:namespace], :container_id => id}

@@ -1,27 +1,8 @@
-- if content_for?(:pagination)
-  %div.fission-pagination.well.well-sm= content_for(:pagination)
-
-.well.well-sm
-  %form#repository-adder{:action => '#'}
-    .row
-      .col-md-2
-        %div{:style => 'text-align: center; vertical-align: middle'}
-          %b
-            Enable Repository:
-      .col-md-8
-        .dropdown
-          %input#repository-box.form-control{:type => 'text', :placeholder => 'Repository Name'}
-
-      .col-md-2
-        %input#repository-enable.btn.btn-success{:type => 'submit', :value => 'Enable'}
-
 %table.table.table-striped
   %thead
     %tr
       %th
         Name
-      %th
-        &nbsp;
   %tbody
     - @enabled_repositories.each do |repo|
       %tr
