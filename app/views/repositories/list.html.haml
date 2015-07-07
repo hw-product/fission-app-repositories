@@ -17,7 +17,6 @@
 
 :ruby
   content_for(:repository_summary) do
-    yield content_for(:repository_enabler)
     render(
       :partial => 'layouts/panel',
       :locals  => {
