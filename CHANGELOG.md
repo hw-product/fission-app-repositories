@@ -1,3 +1,7 @@
+# v0.1.10
+* Use custom hook signature when not in production mode
+* Refactored repository management view
+
 # v0.1.8
 * Update event type registered on webhooks from push to all
 
