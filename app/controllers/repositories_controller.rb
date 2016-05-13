@@ -9,11 +9,7 @@ class RepositoriesController < ApplicationController
         javascript_redirect_to repository_listing_endpoint
       end
       format.html do
-        begin
-          @all_repositories = github(:user).org_repos(@account.name)
-        rescue
-          @all_repositories = github(:user).repos
-        end
+        @all_repositories = load_account_repositories
         @all_repositories = @all_repositories.map do |remote_repo|
           [remote_repo.full_name, remote_repo.id]
         end.sort_by(&:first)
@@ -241,18 +237,14 @@ class RepositoriesController < ApplicationController
   def load_account_repositories(force=false)
     unless(current_user.session.get(:github_repos, @account.name))
       repos = []
-      count = 0
       result = nil
-      if(github(:user).user.login == @account.name)
-        until((result = c.repos(:per_page => 50, :page => count += 1)).count < 50)
-          repos += result
-        end
-        repos += result
-      else
-        until((result = c.org_repos(@account.name, :per_page => 50, :page => count += 1)).count < 50)
-          repos += result
-        end
-        repos += result
+      client = github(:user)
+      repo_method = client.user.login == @account.name ? :repos : :org_repos
+      100.times do
+        result = client.send(repo_method, @account.name, :per_page => 50, :page => count).map(&:to_hash).map(&:to_smash)
+        new_items = result - repos
+        break if new_items.empty?
+        repos += new_items
       end
       current_user.session.set(:github_repos, @account.name, repos)
     end
