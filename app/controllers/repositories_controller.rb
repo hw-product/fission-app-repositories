@@ -240,8 +240,8 @@ class RepositoriesController < ApplicationController
       result = nil
       client = github(:user)
       repo_method = client.user.login == @account.name ? :repos : :org_repos
-      100.times do
-        result = client.send(repo_method, @account.name, :per_page => 50, :page => count).map(&:to_hash).map(&:to_smash)
+      100.times do |count|
+        result = client.send(repo_method, @account.name, :per_page => 50, :page => count + 1).map(&:to_hash).map(&:to_smash)
         new_items = result - repos
         break if new_items.empty?
         repos += new_items
